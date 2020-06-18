@@ -40,8 +40,7 @@ if(isset($CFG->totara_build) && (int) $CFG->totara_build > 20150302) {
      *
      * @package local_autogroup\domain
      */
-    class primary_position extends sort_module
-    {
+    class position extends sort_module {
         /**
          * @param stdClass $config
          * @param int $courseid
@@ -80,23 +79,32 @@ if(isset($CFG->totara_build) && (int) $CFG->totara_build > 20150302) {
         {
             global $CFG;
             require_once("{$CFG->dirroot}/totara/hierarchy/prefix/position/lib.php");
+            require_once("{$CFG->dirroot}/totara/hierarchy/lib.php");
 
             $field = $this->field . 'id';
 
-            // Attempt to load the assignment
-            $primarypos = new \position_assignment(
-                array(
-                    'userid'    => $user->id,
-                    'type'      => POSITION_TYPE_PRIMARY
-                )
-            );
+            // Attempt to load the assignment -- Totara 9 only
+            $pos = new \stdClass();
+            if (class_exists("position_assignment")) {
+                $pos = new \position_assignment(
+                    array(
+                        'userid'    => $user->id
+                    )
+                );
+            } else {
+                $pos = new \position(
+                    array(
+                        'userid'    => $user->id
+                    )
+                );
+            }
 
-            if (isset($primarypos->$field) && !empty($primarypos->$field)) {
+            if (isset($pos->$field) && !empty($pos->$field)) {
                 $method = 'parse_name_' . $this->field; // like parse_name_manager();
 
                 $group = new stdClass();
-                $group->idnumber = $this->field . '_' . $primarypos->$field;
-                $group->friendlyname = $this->$method($primarypos->$field);
+                $group->idnumber = $this->field . '_' . $pos->$field;
+                $group->friendlyname = $this->$method($pos->$field);
 
                 return array($group);
             } else {
@@ -115,7 +123,7 @@ if(isset($CFG->totara_build) && (int) $CFG->totara_build > 20150302) {
             $options = array(
                 'organisation' => get_string('organisation', 'totara_hierarchy'),
                 'position' => get_string('position', 'totara_hierarchy'),
-                'manager' => get_string('manager', 'totara_hierarchy'),
+                'manager' => get_string('manager', 'tool_totara_sync'),
             );
             return $options;
         }
